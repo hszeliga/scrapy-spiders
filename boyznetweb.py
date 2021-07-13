@@ -6,7 +6,7 @@ class BoyzSpider(scrapy.Spider):
     name = "boyznetweb"
     start_urls = ["https://netweb.netdatacorp.net/NDLEC/bok/cgibokcole.html"]
     response = "https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK109.ws"
-    date = str((datetime.now()-timedelta(days=7)).strftime("%m/%d/%Y"))
+    date = (datetime.now()-timedelta(days=7)).strftime("%m/%d/%Y")
 
     def parse(self, response):
         input_data = {
@@ -14,26 +14,24 @@ class BoyzSpider(scrapy.Spider):
             "S109INMNAM": "a",
         }
 
-        yield scrapy.FormRequest.from_response(response, formdata=input_data, callback=self.parse2)
+        yield scrapy.FormRequest.from_response(response, formdata=input_data, callback=self.parseList)
 
-    def parse2(self, response):
-        custom_settings = {
-            'DUPEFILTER_CLASS': 'scrapy.dupefilters.BaseDupeFilter'
-        }
-
+    def parseList(self, response):
         # yield {
         #     "date": response.css("H02-DATE::text").get(),
         # }
 
-        for i in range (len(response.css("L01-KEY::text"))):
+        for element in response.css("L01-KEY::text"):
             inmates_data = {
-                "S101KEY": response.css("L01-KEY::text")[i].get(),
+                "S101KEY": element.get(),
                 "S101LIB": "DATACOLE",
                 "S101PFX": "LE",
                 "S101CNTY": "Coleman",
                 "S101COCOD": "COLEM",
             }
-            yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK101.ws", formdata=inmates_data, callback=self.parse3)
+            yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK101.ws", 
+                                    formdata=inmates_data,
+                                    callback=self.parseInmate)
 
         # for i in range (len(response.css("L01-KEY::text"))):
         #     yield{
@@ -44,7 +42,7 @@ class BoyzSpider(scrapy.Spider):
         #         "charge": response.css("L01-CHARGE::text")[i].get(),
         #     }
 
-        next_page = {
+        next_page_data = {
             "S109ORD": "NX",
             "109ASOFDT": self.date,
             "S109INMNAM": response.css("L01-INMATE-NAME::text")[-1].get(),
@@ -55,15 +53,16 @@ class BoyzSpider(scrapy.Spider):
             "S109COCOD": "COLEM",
             }
 
-        yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK109.ws", formdata=next_page, callback=self.parse4)
+        yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK109.ws", 
+                                formdata=next_page_data, 
+                                callback=self.parseList2)
     
 
-    def parse3(self, response):
+    def parseInmate(self, response):
         # from scrapy.shell import inspect_response
         # from scrapy.utils.response import open_in_browser
 
         # open_in_browser(response)
-
         # inspect_response(response, self)
        
         yield{
@@ -92,11 +91,8 @@ class BoyzSpider(scrapy.Spider):
             "release date": response.css("L27-RELEASE-DATE::text").getall(),
         }
 
-    def parse4(self, response):
+    def parseList2(self, response):
         # from scrapy.shell import inspect_response
-        custom_settings = {
-            'DUPEFILTER_CLASS': 'scrapy.dupefilters.BaseDupeFilter'
-        }
 
         # for i in range(len(response.css("L01-KEY::text"))):
         #     yield{
@@ -109,14 +105,16 @@ class BoyzSpider(scrapy.Spider):
 
         # inspect_response(response, self)
 
-        for i in range (len(response.css("L01-KEY::text"))):
+        for element in response.css("L01-KEY::text"):
             inmates_data = {
-                "S101KEY": response.css("L01-KEY::text")[i].get(),
+                "S101KEY": element.get(),
                 "S101LIB": "DATACOLE",
                 "S101PFX": "LE",
                 "S101CNTY": "Coleman",
                 "S101COCOD": "COLEM",
             }
-            yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK101.ws", formdata=inmates_data, callback=self.parse3)
+            yield scrapy.FormRequest(url="https://netweb.netdatacorp.net/NDLEC/bok/CGIBOK101.ws", 
+                                    formdata=inmates_data, 
+                                    callback=self.parseInmate)
         
         

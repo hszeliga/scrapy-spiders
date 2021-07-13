@@ -10,15 +10,14 @@ class BoyzSpider(scrapy.Spider):
         # from scrapy.utils.response import open_in_browser
 
         # open_in_browser(response)
-
         # inspect_response(response, self)
 
         boyz = response.css("div.sidebar-inmate-list-item")
-        for i in range (len(response.css("p.profile-link a::attr(href)"))):
+        for element in response.css("p.profile-link a::attr(href)"):
             for boy in boyz:
-                view_profile = response.css("p.profile-link a::attr(href)")[i].get()
+                view_profile = element.get()
                 if view_profile is not None:
-                    yield response.follow(view_profile, callback=self.parse2)
+                    yield response.follow(view_profile, callback=self.parseInmate)
 
         
         next_page = response.css("a.next.page-numbers::attr(href)").get()
@@ -26,9 +25,8 @@ class BoyzSpider(scrapy.Spider):
             yield response.follow(next_page, callback=self.parse)
             
  
-    def parse2(self, response):
-        datas = response.css("div.inmate-info")
-        for data in datas:
+    def parseInmate(self, response):
+        for data in response.css("div.inmate-info"):
             yield{
                 "full name": data.css("p::text")[0].get(),               
                 "booking number": data.css("p::text")[1].get().replace(" ",""), 
